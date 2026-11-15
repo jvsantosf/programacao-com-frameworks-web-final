@@ -9,7 +9,8 @@ import { Badge, buttonClass, Card, CheckItem, Illustration } from "../components
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
 import { categoryLabels, formatCurrency } from "../lib/format";
-import { categoryIllustrations, illustrations } from "../lib/illustrations";
+import { illustrations } from "../lib/illustrations";
+import { categoryPhotos } from "../lib/vehiclePhotos";
 import type { Vehicle, VehicleCategory } from "../types";
 
 const sections = [
@@ -277,7 +278,7 @@ function Fleet({ fleet }: { fleet: Vehicle[] }) {
         <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map(({ category, count }) => (
             <div key={category} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-canvas p-4">
-              <Illustration src={categoryIllustrations[category]} className="size-10" />
+              <img src={categoryPhotos[category]} alt="" aria-hidden="true" className="h-10 w-16 shrink-0 object-contain drop-shadow-md" />
               <div>
                 <p className="font-semibold text-ink">{categoryLabels[category]}</p>
                 <p className="text-xs text-slate-500">
