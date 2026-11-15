@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum VehicleCategory {
+  ECONOMY
+  HATCH
+  SEDAN
+  SUV
+  PICKUP
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+}
+
+enum RentalStatus {
+  ACTIVE
+  RETURNED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  email     String   @unique @db.VarChar(160)
+  password  String   @db.VarChar(255)
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  rentals   Rental[]
+
+  @@map("users")
+}
+
+model Vehicle {
+  id        Int             @id @default(autoincrement())
+  brand     String          @db.VarChar(60)
+  model     String          @db.VarChar(60)
+  year      Int
+  plate     String          @unique @db.VarChar(10)
+  color     String          @db.VarChar(30)
+  category  VehicleCategory
+  dailyRate Decimal         @map("daily_rate") @db.Decimal(10, 2)
+  status    VehicleStatus   @default(AVAILABLE)
+  imageUrl  String?         @map("image_url") @db.VarChar(500)
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+  rentals   Rental[]
+
+  @@map("vehicles")
+}
+
+model Rental {
+  id                 Int          @id @default(autoincrement())
+  userId             Int          @map("user_id")
+  vehicleId          Int          @map("vehicle_id")
+  startDate          DateTime     @map("start_date") @db.Date
+  expectedReturnDate DateTime     @map("expected_return_date") @db.Date
+  returnedAt         DateTime?    @map("returned_at")
+  dailyRate          Decimal      @map("daily_rate") @db.Decimal(10, 2)
+  estimatedAmount    Decimal      @map("estimated_amount") @db.Decimal(10, 2)
+  totalAmount        Decimal?     @map("total_amount") @db.Decimal(10, 2)
+  status             RentalStatus @default(ACTIVE)
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+  user               User         @relation(fields: [userId], references: [id])
+  vehicle            Vehicle      @relation(fields: [vehicleId], references: [id])
+
+  @@index([userId])
+  @@index([vehicleId])
+  @@map("rentals")
+}

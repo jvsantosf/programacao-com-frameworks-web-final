@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:3333/api
+@token = cole-o-token-aqui
+
+GET {{baseUrl}}/health
+
+###
+
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Maria Silva",
+  "email": "maria@email.com",
+  "password": "123456"
+}
+
+###
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@locadora.com",
+  "password": "admin123"
+}
+
+###
+
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/vehicles?status=AVAILABLE&category=SUV&search=jeep
+
+###
+
+GET {{baseUrl}}/vehicles/1
+
+###
+
+POST {{baseUrl}}/vehicles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "brand": "Renault",
+  "model": "Kwid",
+  "year": 2024,
+  "plate": "ABC1D23",
+  "color": "Branco",
+  "category": "ECONOMY",
+  "dailyRate": 79.9
+}
+
+###
+
+PUT {{baseUrl}}/vehicles/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dailyRate": 99.9,
+  "status": "MAINTENANCE"
+}
+
+###
+
+DELETE {{baseUrl}}/vehicles/1
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/rentals?status=ACTIVE
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/rentals/1
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/rentals
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": 2,
+  "startDate": "2026-12-01",
+  "expectedReturnDate": "2026-12-05"
+}
+
+###
+
+PATCH {{baseUrl}}/rentals/1/return
+Authorization: Bearer {{token}}
