@@ -75,7 +75,7 @@ export function VehicleFormPage() {
 
     try {
       await api(isEditing ? `/vehicles/${id}` : "/vehicles", { method: isEditing ? "PUT" : "POST", body });
-      navigate("/");
+      navigate("/vehicles");
     } catch (err) {
       setError(errorMessage(err));
       setSubmitting(false);
@@ -86,7 +86,7 @@ export function VehicleFormPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink">
+      <Link to="/vehicles" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink">
         <ArrowLeft className="size-4" />
         Voltar para a frota
       </Link>
@@ -155,7 +155,7 @@ export function VehicleFormPage() {
           </Field>
 
           <div className="grid grid-cols-2 gap-3 pt-3">
-            <Link to="/" className={buttonClass("secondary")}>
+            <Link to="/vehicles" className={buttonClass("secondary")}>
               Cancelar
             </Link>
             <Button type="submit" disabled={submitting}>

@@ -44,7 +44,7 @@ export function RentVehiclePage() {
 
   return (
     <>
-      <Link to="/" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink">
+      <Link to="/vehicles" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink">
         <ArrowLeft className="size-4" />
         Voltar para os veículos
       </Link>

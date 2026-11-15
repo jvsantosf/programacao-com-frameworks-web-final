@@ -29,7 +29,7 @@ function AuthShell({
         className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 sm:left-8 sm:top-8"
       >
         <ArrowLeft className="size-4" />
-        Ver veículos
+        Voltar ao início
       </Link>
 
       <div className="relative w-full max-w-md rounded-[28px] bg-white p-8 shadow-2xl shadow-black/30 sm:p-10">
@@ -57,7 +57,7 @@ function useAuthForm(action: () => Promise<void>) {
     setSubmitting(true);
     try {
       await action();
-      navigate(location.state?.from ?? "/", { replace: true });
+      navigate(location.state?.from ?? "/vehicles", { replace: true });
     } catch (err) {
       setError(errorMessage(err));
       setSubmitting(false);
@@ -73,7 +73,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const { error, submitting, handleSubmit } = useAuthForm(() => login(email, password));
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/vehicles" replace />;
 
   return (
     <AuthShell
@@ -126,7 +126,7 @@ export function RegisterPage() {
   const [password, setPassword] = useState("");
   const { error, submitting, handleSubmit } = useAuthForm(() => register(name, email, password));
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/vehicles" replace />;
 
   return (
     <AuthShell

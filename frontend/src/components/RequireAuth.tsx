@@ -9,7 +9,7 @@ export function RequireAuth({ children, adminOnly = false }: { children: ReactNo
 
   if (loading) return <Spinner />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to="/vehicles" replace />;
 
   return children;
 }

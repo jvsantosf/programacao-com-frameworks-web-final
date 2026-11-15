@@ -34,7 +34,7 @@ export function Layout() {
   const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
-  const items: NavItem[] = [{ to: "/", label: "Veículos", icon: Car, end: true }];
+  const items: NavItem[] = [{ to: "/vehicles", label: "Veículos", icon: Car, end: true }];
   if (user) items.push({ to: "/rentals", label: isAdmin ? "Locações" : "Minhas locações", icon: ClipboardList });
   if (isAdmin) items.push({ to: "/vehicles/new", label: "Novo veículo", icon: Plus });
 

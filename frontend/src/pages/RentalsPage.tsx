@@ -74,7 +74,7 @@ export function RentalsPage() {
       ) : rentals.length === 0 ? (
         <EmptyState image={illustrations.clipboard} title="Nenhuma locação por aqui">
           {!isAdmin && (
-            <Link to="/" className={`${buttonClass("primary")} mt-5`}>
+            <Link to="/vehicles" className={`${buttonClass("primary")} mt-5`}>
               Ver veículos disponíveis
             </Link>
           )}
