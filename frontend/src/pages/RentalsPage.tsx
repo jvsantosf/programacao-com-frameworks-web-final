@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, buttonClass, Card, ConfirmDialog, EmptyState, Illustration, PageHeader, SegmentedControl, Spinner } from "../components/ui";
+import { Alert, Badge, Button, buttonClass, Card, ConfirmDialog, EmptyState, PageHeader, SegmentedControl, Spinner } from "../components/ui";
+import { VehicleThumb } from "../components/VehicleCard";
 import { useAuth } from "../contexts/AuthContext";
 import { api, errorMessage } from "../lib/api";
 import { formatCurrency, formatDate, formatDateTime, rentalStatusLabels, toInputDate } from "../lib/format";
-import { categoryIllustrations, illustrations } from "../lib/illustrations";
+import { illustrations } from "../lib/illustrations";
 import type { Rental, RentalStatus } from "../types";
 
 const filters: { value: RentalStatus | ""; label: string }[] = [
@@ -96,9 +97,7 @@ export function RentalsPage() {
                 className="grid gap-4 px-6 py-5 transition hover:bg-slate-50/60 md:grid-cols-[1.6fr_1.2fr_1fr_1fr_auto] md:items-center"
               >
                 <div className="flex items-center gap-4">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50">
-                    <Illustration src={categoryIllustrations[rental.vehicle.category]} className="size-8" />
-                  </span>
+                  <VehicleThumb vehicle={rental.vehicle} />
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink">
                       {rental.vehicle.brand} {rental.vehicle.model}

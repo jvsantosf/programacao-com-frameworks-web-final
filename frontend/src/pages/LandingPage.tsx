@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import cretaImage from "../assets/hyundai-creta.webp";
 import compassImage from "../assets/jeep-compass.webp";
 import { Logo } from "../components/Layout";
-import { VehicleCard } from "../components/VehicleCard";
+import { VehicleCard, VehicleThumb } from "../components/VehicleCard";
 import { Badge, buttonClass, Card, CheckItem, Illustration } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { api } from "../lib/api";
@@ -374,10 +374,10 @@ function PricingVisual() {
 }
 
 function DashboardVisual() {
-  const rows = [
-    { name: "Jeep Compass", plate: "OJK4E56", image: categoryIllustrations.SUV, active: true },
-    { name: "Toyota Corolla", plate: "PBX3D45", image: categoryIllustrations.SEDAN, active: true },
-    { name: "Fiat Toro", plate: "QWE6G78", image: categoryIllustrations.PICKUP, active: false },
+  const rows: (Pick<Vehicle, "brand" | "model" | "plate" | "category" | "imageUrl"> & { active: boolean })[] = [
+    { brand: "Jeep", model: "Compass", plate: "OJK4E56", category: "SUV", imageUrl: null, active: true },
+    { brand: "Hyundai", model: "Creta", plate: "SLM5F67", category: "SUV", imageUrl: null, active: true },
+    { brand: "Fiat", model: "Toro", plate: "QWE6G78", category: "PICKUP", imageUrl: null, active: false },
   ];
 
   return (
@@ -399,11 +399,9 @@ function DashboardVisual() {
         <div className="mt-3 divide-y divide-slate-100 rounded-2xl bg-white shadow-sm">
           {rows.map((row) => (
             <div key={row.plate} className="flex items-center gap-3 px-4 py-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-brand-50">
-                <Illustration src={row.image} className="size-7" />
-              </span>
+              <VehicleThumb vehicle={row} className="h-10 w-14" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
+                <p className="truncate text-sm font-semibold text-ink">{`${row.brand} ${row.model}`}</p>
                 <p className="font-mono text-xs text-slate-500">{row.plate}</p>
               </div>
               <Badge tone={row.active ? "blue" : "green"}>{row.active ? "Em andamento" : "Devolvido"}</Badge>

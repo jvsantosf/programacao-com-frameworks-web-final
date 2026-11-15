@@ -7,8 +7,8 @@ const vehicles = [
   { brand: "Fiat", model: "Mobi", year: 2023, plate: "QSA1B23", color: "Branco", category: VehicleCategory.ECONOMY, dailyRate: 89.9 },
   { brand: "Volkswagen", model: "Polo", year: 2024, plate: "RFT2C34", color: "Prata", category: VehicleCategory.HATCH, dailyRate: 129.9 },
   { brand: "Toyota", model: "Corolla", year: 2024, plate: "PBX3D45", color: "Preto", category: VehicleCategory.SEDAN, dailyRate: 219.9 },
-  { brand: "Jeep", model: "Compass", year: 2023, plate: "OJK4E56", color: "Cinza", category: VehicleCategory.SUV, dailyRate: 289.9 },
-  { brand: "Hyundai", model: "Creta", year: 2025, plate: "SLM5F67", color: "Azul", category: VehicleCategory.SUV, dailyRate: 249.9 },
+  { brand: "Jeep", model: "Compass", year: 2023, plate: "OJK4E56", color: "Branco", category: VehicleCategory.SUV, dailyRate: 289.9 },
+  { brand: "Hyundai", model: "Creta", year: 2025, plate: "SLM5F67", color: "Prata", category: VehicleCategory.SUV, dailyRate: 249.9 },
   { brand: "Fiat", model: "Toro", year: 2024, plate: "QWE6G78", color: "Vermelho", category: VehicleCategory.PICKUP, dailyRate: 319.9 },
 ];
 
