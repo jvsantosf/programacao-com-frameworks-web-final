@@ -13,10 +13,10 @@ export function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
           <Route element={<Layout />}>
             <Route index element={<VehiclesPage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="register" element={<RegisterPage />} />
             <Route path="rentals" element={<RequireAuth><RentalsPage /></RequireAuth>} />
             <Route path="vehicles/:id/rent" element={<RequireAuth><RentVehiclePage /></RequireAuth>} />
             <Route path="vehicles/new" element={<RequireAuth adminOnly><VehicleFormPage /></RequireAuth>} />

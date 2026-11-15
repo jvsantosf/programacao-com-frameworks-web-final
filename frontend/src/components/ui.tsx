@@ -1,16 +1,17 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
+import { Check, X } from "lucide-react";
+import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: "bg-teal-700 text-white hover:bg-teal-800 disabled:bg-teal-700/60",
-  secondary: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
-  danger: "border border-red-200 bg-white text-red-700 hover:bg-red-50",
-  ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+  primary: "bg-brand-500 text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600 disabled:bg-brand-300 disabled:shadow-none",
+  secondary: "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+  danger: "border border-red-100 bg-red-50 text-red-600 hover:bg-red-100",
+  ghost: "text-slate-600 hover:bg-slate-100 hover:text-ink",
 };
 
 export const buttonClass = (variant: ButtonVariant = "primary") =>
-  `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${buttonVariants[variant]}`;
+  `inline-flex h-11 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${buttonVariants[variant]}`;
 
 export function Button({
   variant = "primary",
@@ -21,78 +22,184 @@ export function Button({
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20";
+  "h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-[15px] text-ink placeholder:text-slate-400 transition focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15 disabled:bg-slate-50 disabled:text-slate-500";
 
 export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={`${fieldClass} ${className}`} {...props} />;
 }
 
 export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={`${fieldClass} disabled:bg-slate-100 ${className}`} {...props} />;
+  return <select className={`${fieldClass} ${className}`} {...props} />;
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+    <label className="block space-y-2">
+      <span className="text-sm font-medium text-ink">{label}</span>
       {children}
+      {hint && <span className="block text-[13px] text-slate-500">{hint}</span>}
     </label>
   );
 }
 
 export function Alert({ children }: { children: ReactNode }) {
-  return <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{children}</div>;
+  return <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{children}</div>;
 }
 
 const badgeTones = {
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  amber: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  slate: "bg-slate-100 text-slate-600 ring-slate-500/20",
-  blue: "bg-sky-50 text-sky-700 ring-sky-600/20",
+  green: "bg-emerald-50 text-emerald-600",
+  orange: "bg-brand-50 text-brand-600",
+  slate: "bg-slate-100 text-slate-500",
+  blue: "bg-indigo-50 text-indigo-600",
 };
 
 export function Badge({ tone, children }: { tone: keyof typeof badgeTones; children: ReactNode }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${badgeTones[tone]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${badgeTones[tone]}`}>
+      <span className="size-1.5 rounded-full bg-current" />
       {children}
     </span>
   );
 }
 
+export function Card({ className = "", children }: { className?: string; children: ReactNode }) {
+  return <div className={`rounded-3xl border border-slate-100 bg-white shadow-[0_1px_2px_rgb(16_23_39/0.04)] ${className}`}>{children}</div>;
+}
+
+export function Illustration({ src, className = "size-20" }: { src: string; className?: string }) {
+  return <img src={src} alt="" aria-hidden="true" draggable={false} className={`select-none object-contain ${className}`} />;
+}
+
 export function PageHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{title}</h1>
+        {description && <p className="mt-1 text-slate-500">{description}</p>}
       </div>
       {action}
     </div>
   );
 }
 
-export function EmptyState({ children }: { children: ReactNode }) {
+export function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
-      {children}
+    <div className="inline-flex rounded-full bg-slate-100 p-1">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+            value === option.value ? "bg-white text-ink shadow-sm" : "text-slate-500 hover:text-ink"
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
     </div>
+  );
+}
+
+export function CheckItem({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex items-center gap-3 text-slate-600">
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
+        <Check className="size-3.5" strokeWidth={3} />
+      </span>
+      {children}
+    </li>
+  );
+}
+
+export function EmptyState({ image, title, children }: { image: string; title: string; children?: ReactNode }) {
+  return (
+    <Card className="flex flex-col items-center px-6 py-14 text-center">
+      <Illustration src={image} className="size-20" />
+      <h2 className="mt-4 text-lg font-semibold text-ink">{title}</h2>
+      {children && <div className="mt-1 text-slate-500">{children}</div>}
+    </Card>
   );
 }
 
 export function Spinner() {
   return (
-    <div className="flex justify-center py-12">
-      <div className="size-6 animate-spin rounded-full border-2 border-slate-300 border-t-teal-700" />
+    <div className="flex justify-center py-16">
+      <div className="size-7 animate-spin rounded-full border-[3px] border-brand-100 border-t-brand-500" />
     </div>
   );
 }
 
-export function CarIcon({ className = "" }: { className?: string }) {
+export function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: ReactNode }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (event: KeyboardEvent) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} aria-hidden="true">
-      <path d="M3 16v-3.2l2.1-4.9A2 2 0 0 1 6.9 6.7h10.2a2 2 0 0 1 1.8 1.2l2.1 4.9V16a1 1 0 0 1-1 1h-1.5M3 16a1 1 0 0 0 1 1h1.5M3 16h18M8.5 17h7M3.5 12.5h17" />
-      <circle cx="7" cy="17" r="1.5" />
-      <circle cx="17" cy="17" r="1.5" />
-    </svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
+      <div role="dialog" aria-modal="true" className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fechar"
+          className="absolute right-5 top-5 rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-ink"
+        >
+          <X className="size-5" />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function ConfirmDialog({
+  open,
+  image,
+  title,
+  description,
+  confirmLabel,
+  loading,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean;
+  image: string;
+  title: string;
+  description: ReactNode;
+  confirmLabel: string;
+  loading?: boolean;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="text-center">
+        <Illustration src={image} className="mx-auto size-24" />
+        <h2 className="mt-4 text-2xl font-bold tracking-tight text-ink">{title}</h2>
+        <div className="mt-2 text-slate-500">{description}</div>
+      </div>
+      <div className="mt-8 grid grid-cols-2 gap-3">
+        <Button variant="secondary" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button onClick={onConfirm} disabled={loading}>
+          {loading ? "Aguarde..." : confirmLabel}
+        </Button>
+      </div>
+    </Modal>
   );
 }

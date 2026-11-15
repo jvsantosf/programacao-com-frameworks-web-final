@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, buttonClass, EmptyState, PageHeader, Spinner } from "../components/ui";
+import { Alert, Badge, Button, buttonClass, Card, ConfirmDialog, EmptyState, Illustration, PageHeader, SegmentedControl, Spinner } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { api, errorMessage } from "../lib/api";
 import { formatCurrency, formatDate, formatDateTime, rentalStatusLabels, toInputDate } from "../lib/format";
+import { categoryIllustrations, illustrations } from "../lib/illustrations";
 import type { Rental, RentalStatus } from "../types";
 
 const filters: { value: RentalStatus | ""; label: string }[] = [
@@ -22,7 +23,8 @@ export function RentalsPage() {
   const [status, setStatus] = useState<RentalStatus | "">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [returningId, setReturningId] = useState<number | null>(null);
+  const [toReturn, setToReturn] = useState<Rental | null>(null);
+  const [returning, setReturning] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -35,20 +37,21 @@ export function RentalsPage() {
       .finally(() => setLoading(false));
   }, [status]);
 
-  async function handleReturn(rental: Rental) {
-    if (!confirm(`Confirmar a devolução do ${rental.vehicle.brand} ${rental.vehicle.model}?`)) return;
-    setReturningId(rental.id);
+  async function handleReturn() {
+    if (!toReturn) return;
+    setReturning(true);
     try {
-      const updated = await api<Rental>(`/rentals/${rental.id}/return`, { method: "PATCH" });
+      const updated = await api<Rental>(`/rentals/${toReturn.id}/return`, { method: "PATCH" });
       setRentals((current) =>
         status === "ACTIVE"
-          ? current.filter((item) => item.id !== rental.id)
-          : current.map((item) => (item.id === rental.id ? updated : item)),
+          ? current.filter((item) => item.id !== updated.id)
+          : current.map((item) => (item.id === updated.id ? updated : item)),
       );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setReturningId(null);
+      setReturning(false);
+      setToReturn(null);
     }
   }
 
@@ -56,26 +59,12 @@ export function RentalsPage() {
     <>
       <PageHeader
         title={isAdmin ? "Locações" : "Minhas locações"}
-        description={isAdmin ? "Acompanhe todas as locações e registre devoluções." : "Acompanhe suas locações e devoluções."}
-        action={
-          <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-            {filters.map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => setStatus(filter.value)}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  status === filter.value ? "bg-teal-700 text-white" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        }
+        description={isAdmin ? "Acompanhe todas as locações e registre devoluções." : "Acompanhe suas reservas e devoluções."}
+        action={<SegmentedControl options={filters} value={status} onChange={setStatus} />}
       />
 
       {error && (
-        <div className="mb-4">
+        <div className="mb-6">
           <Alert>{error}</Alert>
         </div>
       )}
@@ -83,66 +72,93 @@ export function RentalsPage() {
       {loading ? (
         <Spinner />
       ) : rentals.length === 0 ? (
-        <EmptyState>
-          Nenhuma locação encontrada.{" "}
+        <EmptyState image={illustrations.clipboard} title="Nenhuma locação por aqui">
           {!isAdmin && (
-            <Link to="/" className={`${buttonClass("ghost")} text-teal-700`}>
+            <Link to="/" className={`${buttonClass("primary")} mt-5`}>
               Ver veículos disponíveis
             </Link>
           )}
         </EmptyState>
       ) : (
-        <div className="space-y-3">
-          {rentals.map((rental) => (
-            <article
-              key={rental.id}
-              className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-center"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="font-semibold text-slate-900">
-                    {rental.vehicle.brand} {rental.vehicle.model}
-                  </h2>
-                  <Badge tone={rental.status === "ACTIVE" ? "blue" : "slate"}>{rentalStatusLabels[rental.status]}</Badge>
-                  {isLate(rental) && <Badge tone="amber">Atrasada</Badge>}
+        <Card className="overflow-hidden">
+          <div className="hidden grid-cols-[1.6fr_1.2fr_1fr_1fr_auto] gap-4 border-b border-slate-100 px-6 py-4 text-sm font-medium text-slate-500 md:grid">
+            <span>Veículo</span>
+            <span>Período</span>
+            <span>Situação</span>
+            <span>Valor</span>
+            <span className="w-48" />
+          </div>
+
+          <ul className="divide-y divide-slate-100">
+            {rentals.map((rental) => (
+              <li
+                key={rental.id}
+                className="grid gap-4 px-6 py-5 transition hover:bg-slate-50/60 md:grid-cols-[1.6fr_1.2fr_1fr_1fr_auto] md:items-center"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50">
+                    <Illustration src={categoryIllustrations[rental.vehicle.category]} className="size-8" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">
+                      {rental.vehicle.brand} {rental.vehicle.model}
+                    </p>
+                    <p className="truncate text-sm text-slate-500">
+                      <span className="font-mono">{rental.vehicle.plate}</span> · #{rental.id}
+                      {isAdmin && ` · ${rental.user.name}`}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-500">
-                  <span className="font-mono">{rental.vehicle.plate}</span> · Locação #{rental.id}
-                  {isAdmin && ` · ${rental.user.name}`}
-                </p>
-              </div>
 
-              <dl className="text-sm">
-                <dt className="text-slate-500">Período</dt>
-                <dd className="text-slate-900">
-                  {formatDate(rental.startDate)} → {formatDate(rental.expectedReturnDate)}
-                </dd>
-                {rental.returnedAt && (
-                  <dd className="text-xs text-slate-500">Devolvido em {formatDateTime(rental.returnedAt)}</dd>
-                )}
-              </dl>
+                <div className="text-sm">
+                  <p className="text-ink">
+                    {formatDate(rental.startDate)} → {formatDate(rental.expectedReturnDate)}
+                  </p>
+                  {rental.returnedAt && (
+                    <p className="text-xs text-slate-500">Devolvido em {formatDateTime(rental.returnedAt)}</p>
+                  )}
+                </div>
 
-              <dl className="text-sm">
-                <dt className="text-slate-500">{rental.totalAmount ? "Valor final" : "Valor estimado"}</dt>
-                <dd className="font-semibold text-slate-900">{formatCurrency(rental.totalAmount ?? rental.estimatedAmount)}</dd>
-                <dd className="text-xs text-slate-500">{formatCurrency(rental.dailyRate)} /dia</dd>
-              </dl>
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone={rental.status === "ACTIVE" ? "blue" : "green"}>{rentalStatusLabels[rental.status]}</Badge>
+                  {isLate(rental) && <Badge tone="orange">Atrasada</Badge>}
+                </div>
 
-              <div className="md:text-right">
-                {rental.status === "ACTIVE" && (
-                  <Button
-                    variant="secondary"
-                    disabled={returningId === rental.id}
-                    onClick={() => handleReturn(rental)}
-                  >
-                    {returningId === rental.id ? "Registrando..." : "Registrar devolução"}
-                  </Button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+                <div>
+                  <p className="font-bold text-ink">{formatCurrency(rental.totalAmount ?? rental.estimatedAmount)}</p>
+                  <p className="text-xs text-slate-500">{rental.totalAmount ? "Valor final" : "Estimado"}</p>
+                </div>
+
+                <div className="md:w-48 md:text-right">
+                  {rental.status === "ACTIVE" && (
+                    <Button variant="secondary" className="h-10 w-full whitespace-nowrap px-4 md:w-auto" onClick={() => setToReturn(rental)}>
+                      Registrar devolução
+                    </Button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
+
+      <ConfirmDialog
+        open={toReturn !== null}
+        image={illustrations.key}
+        title="Registrar devolução"
+        description={
+          toReturn && (
+            <>
+              Confirma a devolução do <strong className="text-ink">{`${toReturn.vehicle.brand} ${toReturn.vehicle.model}`}</strong>?
+              O valor final será calculado pelos dias utilizados e o veículo volta a ficar disponível.
+            </>
+          )
+        }
+        confirmLabel="Confirmar"
+        loading={returning}
+        onConfirm={handleReturn}
+        onClose={() => setToReturn(null)}
+      />
     </>
   );
 }

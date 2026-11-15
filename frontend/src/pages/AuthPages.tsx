@@ -1,20 +1,46 @@
+import { ArrowLeft } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import { Alert, Button, CarIcon, Field, Input } from "../components/ui";
+import { Alert, Button, Field, Illustration, Input } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { errorMessage } from "../lib/api";
+import { illustrations } from "../lib/illustrations";
 
-function AuthCard({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
+function AuthShell({
+  image,
+  title,
+  subtitle,
+  footer,
+  children,
+}: {
+  image: string;
+  title: string;
+  subtitle: string;
+  footer: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="mx-auto max-w-sm py-8">
-      <div className="mb-6 text-center">
-        <span className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-teal-700 text-white">
-          <CarIcon className="size-7" />
-        </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+    <div className="bg-auth relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div className="bg-dots pointer-events-none absolute inset-x-0 top-0 h-40 opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+      <div className="bg-dots pointer-events-none absolute bottom-0 left-0 h-full w-48 opacity-40 [mask-image:linear-gradient(to_right,black,transparent)]" />
+
+      <Link
+        to="/"
+        className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20 sm:left-8 sm:top-8"
+      >
+        <ArrowLeft className="size-4" />
+        Ver veículos
+      </Link>
+
+      <div className="relative w-full max-w-md rounded-[28px] bg-white p-8 shadow-2xl shadow-black/30 sm:p-10">
+        <div className="text-center">
+          <Illustration src={image} className="mx-auto size-24" />
+          <h1 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-ink">{title}</h1>
+          <p className="mt-2 text-slate-500">{subtitle}</p>
+        </div>
+        <div className="mt-8">{children}</div>
+        <div className="mt-6 text-center text-sm text-slate-500">{footer}</div>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">{children}</div>
     </div>
   );
 }
@@ -50,36 +76,46 @@ export function LoginPage() {
   if (user) return <Navigate to="/" replace />;
 
   return (
-    <AuthCard
-      title="Acesse sua conta"
-      subtitle={
+    <AuthShell
+      image={illustrations.key}
+      title="Bem-vindo de volta"
+      subtitle="Entre para alugar veículos e acompanhar suas locações."
+      footer={
         <>
           Ainda não tem conta?{" "}
-          <Link to="/register" className="font-medium text-teal-700 hover:underline">
+          <Link to="/register" className="font-semibold text-brand-600 hover:underline">
             Cadastre-se
           </Link>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && <Alert>{error}</Alert>}
         <Field label="E-mail">
-          <Input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="nome@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </Field>
         <Field label="Senha">
           <Input
             type="password"
             required
             autoComplete="current-password"
+            placeholder="Sua senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        <Button type="submit" disabled={submitting} className="w-full">
+        <Button type="submit" disabled={submitting} className="h-12 w-full">
           {submitting ? "Entrando..." : "Entrar"}
         </Button>
       </form>
-    </AuthCard>
+    </AuthShell>
   );
 }
 
@@ -93,40 +129,56 @@ export function RegisterPage() {
   if (user) return <Navigate to="/" replace />;
 
   return (
-    <AuthCard
+    <AuthShell
+      image={illustrations.automobile}
       title="Crie sua conta"
-      subtitle={
+      subtitle="Em poucos segundos você já pode reservar o seu carro."
+      footer={
         <>
           Já possui cadastro?{" "}
-          <Link to="/login" className="font-medium text-teal-700 hover:underline">
+          <Link to="/login" className="font-semibold text-brand-600 hover:underline">
             Entrar
           </Link>
         </>
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {error && <Alert>{error}</Alert>}
         <Field label="Nome completo">
-          <Input required minLength={3} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            required
+            minLength={3}
+            autoComplete="name"
+            placeholder="Seu nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
         </Field>
         <Field label="E-mail">
-          <Input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="nome@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </Field>
-        <Field label="Senha">
+        <Field label="Senha" hint="Use no mínimo 6 caracteres.">
           <Input
             type="password"
             required
             minLength={6}
             autoComplete="new-password"
-            placeholder="Mínimo de 6 caracteres"
+            placeholder="Crie uma senha"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </Field>
-        <Button type="submit" disabled={submitting} className="w-full">
+        <Button type="submit" disabled={submitting} className="h-12 w-full">
           {submitting ? "Criando conta..." : "Criar conta"}
         </Button>
       </form>
-    </AuthCard>
+    </AuthShell>
   );
 }
