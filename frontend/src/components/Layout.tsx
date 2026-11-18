@@ -31,12 +31,14 @@ function initials(name: string) {
 }
 
 export function Layout() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const items: NavItem[] = [{ to: "/vehicles", label: "Veículos", icon: Car, end: true }];
-  if (user) items.push({ to: "/rentals", label: isAdmin ? "Locações" : "Minhas locações", icon: ClipboardList });
-  if (isAdmin) items.push({ to: "/vehicles/new", label: "Novo veículo", icon: Plus });
+  const items: NavItem[] = [
+    { to: "/vehicles", label: "Veículos", icon: Car, end: true },
+    { to: "/vehicles/new", label: "Cadastrar veículo", icon: Plus },
+    { to: "/rentals", label: "Minhas locações", icon: ClipboardList },
+  ];
 
   function handleLogout() {
     logout();
@@ -82,7 +84,7 @@ export function Layout() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-ink">{user.name}</p>
-                <p className="text-xs text-slate-500">{isAdmin ? "Administrador" : "Cliente"}</p>
+                <p className="truncate text-xs text-slate-500">{user.email}</p>
               </div>
               <button
                 onClick={handleLogout}

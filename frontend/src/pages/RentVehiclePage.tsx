@@ -1,20 +1,20 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { VehicleImage, VehicleStatusBadge } from "../components/VehicleCard";
+import { AvailabilityBadge, VehicleImage } from "../components/VehicleCard";
 import { Alert, Button, Card, CheckItem, Field, Illustration, Input, Spinner } from "../components/ui";
 import { api, errorMessage } from "../lib/api";
-import { addDays, categoryLabels, daysBetween, formatCurrency, toInputDate } from "../lib/format";
+import { addDays, categoryLabels, chargeableDays, formatCurrency, toInputDateTime } from "../lib/format";
 import { illustrations } from "../lib/illustrations";
-import type { Vehicle } from "../types";
+import type { Rental, Vehicle } from "../types";
 
 export function RentVehiclePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const today = toInputDate(new Date());
+  const now = toInputDateTime(new Date());
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [startDate, setStartDate] = useState(today);
-  const [expectedReturnDate, setExpectedReturnDate] = useState(toInputDate(addDays(new Date(), 3)));
+  const [startDate, setStartDate] = useState(now);
+  const [expectedReturnDate, setExpectedReturnDate] = useState(toInputDateTime(addDays(new Date(), 3)));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,7 +24,7 @@ export function RentVehiclePage() {
       .catch((err) => setError(errorMessage(err)));
   }, [id]);
 
-  const days = daysBetween(startDate, expectedReturnDate);
+  const days = chargeableDays(startDate, expectedReturnDate);
   const validPeriod = days > 0;
 
   async function handleSubmit(event: FormEvent) {
@@ -32,8 +32,19 @@ export function RentVehiclePage() {
     setError("");
     setSubmitting(true);
     try {
-      await api("/rentals", { method: "POST", body: { vehicleId: Number(id), startDate, expectedReturnDate } });
-      navigate("/rentals");
+      const rental = await api<Rental>("/rentals", {
+        method: "POST",
+        body: {
+          vehicleId: Number(id),
+          startDate: new Date(startDate).toISOString(),
+          expectedReturnDate: new Date(expectedReturnDate).toISOString(),
+        },
+      });
+      navigate("/rentals", {
+        state: {
+          success: `Locação #${rental.id} registrada: ${rental.vehicle.brand} ${rental.vehicle.model}, total de ${formatCurrency(rental.totalAmount)}.`,
+        },
+      });
     } catch (err) {
       setError(errorMessage(err));
       setSubmitting(false);
@@ -60,7 +71,7 @@ export function RentVehiclePage() {
                   {vehicle.brand} {vehicle.model}
                 </h1>
               </div>
-              <VehicleStatusBadge status={vehicle.status} />
+              <AvailabilityBadge available={vehicle.available} />
             </div>
 
             <dl className="mt-6 grid grid-cols-3 gap-3">
@@ -78,7 +89,7 @@ export function RentVehiclePage() {
 
             <ul className="mt-6 space-y-3 text-[15px]">
               <CheckItem>Diária fixada no momento da reserva</CheckItem>
-              <CheckItem>Devolveu antes? Paga só pelos dias usados</CheckItem>
+              <CheckItem>Cada fração de 24 horas conta como uma diária completa</CheckItem>
             </ul>
           </div>
         </Card>
@@ -91,12 +102,18 @@ export function RentVehiclePage() {
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             {error && <Alert>{error}</Alert>}
 
-            <Field label="Data de retirada">
-              <Input type="date" required min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <Field label="Início da locação">
+              <Input
+                type="datetime-local"
+                required
+                min={now}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </Field>
             <Field label="Devolução prevista">
               <Input
-                type="date"
+                type="datetime-local"
                 required
                 min={startDate}
                 value={expectedReturnDate}
@@ -112,26 +129,20 @@ export function RentVehiclePage() {
                   <span className="font-medium text-ink">{formatCurrency(vehicle.dailyRate)}</span>
                 </div>
                 <div className="flex justify-between text-slate-500">
-                  <span>Período</span>
-                  <span className="font-medium text-ink">
-                    {validPeriod ? `${days} diária${days > 1 ? "s" : ""}` : "—"}
-                  </span>
+                  <span>Diárias cobradas</span>
+                  <span className="font-medium text-ink">{validPeriod ? days : "—"}</span>
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between rounded-xl bg-indigo-50 px-4 py-3 text-indigo-600">
-                <span className="font-medium">Total estimado</span>
+                <span className="font-medium">Valor total</span>
                 <span className="text-lg font-bold">
                   {validPeriod ? formatCurrency(Number(vehicle.dailyRate) * days) : "—"}
                 </span>
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="h-12 w-full"
-              disabled={submitting || !validPeriod || vehicle.status !== "AVAILABLE"}
-            >
-              {submitting ? "Confirmando..." : "Confirmar locação"}
+            <Button type="submit" className="h-12 w-full" disabled={submitting || !validPeriod || !vehicle.available}>
+              {submitting ? "Confirmando..." : vehicle.available ? "Confirmar locação" : "Veículo indisponível"}
             </Button>
           </form>
         </Card>

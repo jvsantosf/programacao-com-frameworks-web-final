@@ -1,31 +1,43 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { Alert, Badge, Button, buttonClass, Card, ConfirmDialog, EmptyState, PageHeader, SegmentedControl, Spinner } from "../components/ui";
 import { VehicleThumb } from "../components/VehicleCard";
-import { useAuth } from "../contexts/AuthContext";
+import {
+  Alert,
+  Badge,
+  Button,
+  buttonClass,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  PageHeader,
+  SegmentedControl,
+  Spinner,
+  SuccessAlert,
+} from "../components/ui";
 import { api, errorMessage } from "../lib/api";
-import { formatCurrency, formatDate, formatDateTime, rentalStatusLabels, toInputDate } from "../lib/format";
+import { formatCurrency, formatDateTime, rentalStatusLabels } from "../lib/format";
 import { illustrations } from "../lib/illustrations";
+import { useFlashMessage } from "../lib/useFlashMessage";
 import type { Rental, RentalStatus } from "../types";
 
 const filters: { value: RentalStatus | ""; label: string }[] = [
   { value: "", label: "Todas" },
   { value: "ACTIVE", label: "Em andamento" },
-  { value: "RETURNED", label: "Devolvidas" },
+  { value: "FINISHED", label: "Finalizadas" },
 ];
 
 function isLate(rental: Rental) {
-  return rental.status === "ACTIVE" && rental.expectedReturnDate.slice(0, 10) < toInputDate(new Date());
+  return rental.status === "ACTIVE" && new Date(rental.expectedReturnDate) < new Date();
 }
 
 export function RentalsPage() {
-  const { isAdmin } = useAuth();
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [status, setStatus] = useState<RentalStatus | "">("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [toReturn, setToReturn] = useState<Rental | null>(null);
-  const [returning, setReturning] = useState(false);
+  const [success, setSuccess] = useFlashMessage();
+  const [toFinish, setToFinish] = useState<Rental | null>(null);
+  const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -38,31 +50,39 @@ export function RentalsPage() {
       .finally(() => setLoading(false));
   }, [status]);
 
-  async function handleReturn() {
-    if (!toReturn) return;
-    setReturning(true);
+  async function handleFinish() {
+    if (!toFinish) return;
+    setFinishing(true);
+    setError("");
     try {
-      const updated = await api<Rental>(`/rentals/${toReturn.id}/return`, { method: "PATCH" });
+      const updated = await api<Rental>(`/rentals/${toFinish.id}/finish`, { method: "PATCH" });
       setRentals((current) =>
         status === "ACTIVE"
           ? current.filter((item) => item.id !== updated.id)
           : current.map((item) => (item.id === updated.id ? updated : item)),
       );
+      setSuccess(`Locação #${updated.id} finalizada. O ${updated.vehicle.brand} ${updated.vehicle.model} está disponível novamente.`);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
-      setReturning(false);
-      setToReturn(null);
+      setFinishing(false);
+      setToFinish(null);
     }
   }
 
   return (
     <>
       <PageHeader
-        title={isAdmin ? "Locações" : "Minhas locações"}
-        description={isAdmin ? "Acompanhe todas as locações e registre devoluções." : "Acompanhe suas reservas e devoluções."}
+        title="Minhas locações"
+        description="Acompanhe suas locações em andamento e o histórico das finalizadas."
         action={<SegmentedControl options={filters} value={status} onChange={setStatus} />}
       />
+
+      {success && (
+        <div className="mb-6">
+          <SuccessAlert onClose={() => setSuccess("")}>{success}</SuccessAlert>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6">
@@ -74,29 +94,27 @@ export function RentalsPage() {
         <Spinner />
       ) : rentals.length === 0 ? (
         <EmptyState image={illustrations.clipboard} title="Nenhuma locação por aqui">
-          {!isAdmin && (
-            <Link to="/vehicles" className={`${buttonClass("primary")} mt-5`}>
-              Ver veículos disponíveis
-            </Link>
-          )}
+          <Link to="/vehicles" className={`${buttonClass("primary")} mt-5`}>
+            Ver veículos disponíveis
+          </Link>
         </EmptyState>
       ) : (
         <Card className="overflow-hidden">
-          <div className="hidden grid-cols-[1.6fr_1.2fr_1fr_1fr_auto] gap-4 border-b border-slate-100 px-6 py-4 text-sm font-medium text-slate-500 md:grid">
+          <div className="hidden grid-cols-[1.5fr_1.4fr_1fr_1fr_auto] gap-4 border-b border-slate-100 px-6 py-4 text-sm font-medium text-slate-500 md:grid">
             <span>Veículo</span>
-            <span>Período</span>
+            <span>Período contratado</span>
             <span>Situação</span>
-            <span>Valor</span>
-            <span className="w-48" />
+            <span>Valor total</span>
+            <span className="w-44" />
           </div>
 
           <ul className="divide-y divide-slate-100">
             {rentals.map((rental) => (
               <li
                 key={rental.id}
-                className="grid gap-4 px-6 py-5 transition hover:bg-slate-50/60 md:grid-cols-[1.6fr_1.2fr_1fr_1fr_auto] md:items-center"
+                className="grid gap-4 px-6 py-5 transition hover:bg-slate-50/60 md:grid-cols-[1.5fr_1.4fr_1fr_1fr_auto] md:items-center"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex min-w-0 items-center gap-4">
                   <VehicleThumb vehicle={rental.vehicle} />
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink">
@@ -104,15 +122,13 @@ export function RentalsPage() {
                     </p>
                     <p className="truncate text-sm text-slate-500">
                       <span className="font-mono">{rental.vehicle.plate}</span> · #{rental.id}
-                      {isAdmin && ` · ${rental.user.name}`}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-sm">
-                  <p className="text-ink">
-                    {formatDate(rental.startDate)} → {formatDate(rental.expectedReturnDate)}
-                  </p>
+                  <p className="text-ink">{formatDateTime(rental.startDate)}</p>
+                  <p className="text-ink">até {formatDateTime(rental.expectedReturnDate)}</p>
                   {rental.returnedAt && (
                     <p className="text-xs text-slate-500">Devolvido em {formatDateTime(rental.returnedAt)}</p>
                   )}
@@ -124,14 +140,18 @@ export function RentalsPage() {
                 </div>
 
                 <div>
-                  <p className="font-bold text-ink">{formatCurrency(rental.totalAmount ?? rental.estimatedAmount)}</p>
-                  <p className="text-xs text-slate-500">{rental.totalAmount ? "Valor final" : "Estimado"}</p>
+                  <p className="font-bold text-ink">{formatCurrency(rental.totalAmount)}</p>
+                  <p className="text-xs text-slate-500">{formatCurrency(rental.dailyRate)} /dia</p>
                 </div>
 
-                <div className="md:w-48 md:text-right">
+                <div className="md:w-44 md:text-right">
                   {rental.status === "ACTIVE" && (
-                    <Button variant="secondary" className="h-10 w-full whitespace-nowrap px-4 md:w-auto" onClick={() => setToReturn(rental)}>
-                      Registrar devolução
+                    <Button
+                      variant="secondary"
+                      className="h-10 w-full whitespace-nowrap px-4 md:w-auto"
+                      onClick={() => setToFinish(rental)}
+                    >
+                      Finalizar locação
                     </Button>
                   )}
                 </div>
@@ -142,21 +162,21 @@ export function RentalsPage() {
       )}
 
       <ConfirmDialog
-        open={toReturn !== null}
+        open={toFinish !== null}
         image={illustrations.key}
-        title="Registrar devolução"
+        title="Finalizar locação"
         description={
-          toReturn && (
+          toFinish && (
             <>
-              Confirma a devolução do <strong className="text-ink">{`${toReturn.vehicle.brand} ${toReturn.vehicle.model}`}</strong>?
-              O valor final será calculado pelos dias utilizados e o veículo volta a ficar disponível.
+              Confirma a devolução do <strong className="text-ink">{`${toFinish.vehicle.brand} ${toFinish.vehicle.model}`}</strong>?
+              A data de devolução será registrada e o veículo voltará a ficar disponível.
             </>
           )
         }
-        confirmLabel="Confirmar"
-        loading={returning}
-        onConfirm={handleReturn}
-        onClose={() => setToReturn(null)}
+        confirmLabel="Finalizar"
+        loading={finishing}
+        onConfirm={handleFinish}
+        onClose={() => setToFinish(null)}
       />
     </>
   );

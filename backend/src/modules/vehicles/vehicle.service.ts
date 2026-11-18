@@ -1,12 +1,12 @@
-import { VehicleStatus, type Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { AppError } from "../../errors/app-error";
 import { prisma } from "../../lib/prisma";
-import type { UpdateVehicleInput, VehicleInput, VehicleQuery } from "./vehicle.schemas";
+import type { VehicleInput, VehicleQuery } from "./vehicle.schemas";
 
 export async function list(query: VehicleQuery) {
   const where: Prisma.VehicleWhereInput = {
-    status: query.status,
     category: query.category,
+    available: query.available,
   };
 
   if (query.search) {
@@ -29,42 +29,9 @@ export async function findById(id: number) {
 }
 
 export async function create(data: VehicleInput) {
-  await ensurePlateIsFree(data.plate);
-  return prisma.vehicle.create({ data });
-}
-
-export async function update(id: number, data: UpdateVehicleInput) {
-  const vehicle = await findById(id);
-
-  if (data.status && vehicle.status === VehicleStatus.RENTED) {
-    throw new AppError("Não é possível alterar o status de um veículo locado", 409);
-  }
-
-  if (data.plate && data.plate !== vehicle.plate) {
-    await ensurePlateIsFree(data.plate);
-  }
-
-  return prisma.vehicle.update({ where: { id }, data });
-}
-
-export async function remove(id: number) {
-  const vehicle = await findById(id);
-
-  if (vehicle.status === VehicleStatus.RENTED) {
-    throw new AppError("Não é possível excluir um veículo locado", 409);
-  }
-
-  const rentals = await prisma.rental.count({ where: { vehicleId: id } });
-  if (rentals > 0) {
-    throw new AppError("Veículo possui histórico de locações e não pode ser excluído", 409);
-  }
-
-  await prisma.vehicle.delete({ where: { id } });
-}
-
-async function ensurePlateIsFree(plate: string) {
-  const existing = await prisma.vehicle.findUnique({ where: { plate } });
+  const existing = await prisma.vehicle.findUnique({ where: { plate: data.plate } });
   if (existing) {
     throw new AppError("Já existe um veículo com essa placa", 409);
   }
+  return prisma.vehicle.create({ data });
 }

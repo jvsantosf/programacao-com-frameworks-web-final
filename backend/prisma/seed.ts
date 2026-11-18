@@ -1,7 +1,14 @@
-import { PrismaClient, Role, VehicleCategory } from "@prisma/client";
+import { PrismaClient, RentalStatus, VehicleCategory } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const users = [
+  { name: "Maria Silva", email: "maria@locadora.com", password: "123456" },
+  { name: "João Souza", email: "joao@locadora.com", password: "123456" },
+];
 
 const vehicles = [
   { brand: "Fiat", model: "Mobi", year: 2023, plate: "QSA1B23", color: "Azul", category: VehicleCategory.ECONOMY, dailyRate: 89.9 },
@@ -13,16 +20,38 @@ const vehicles = [
 ];
 
 async function main() {
-  const password = await bcrypt.hash("admin123", 10);
-
-  await prisma.user.upsert({
-    where: { email: "admin@locadora.com" },
-    update: {},
-    create: { name: "Administrador", email: "admin@locadora.com", password, role: Role.ADMIN },
-  });
+  const createdUsers = [];
+  for (const user of users) {
+    const password = await bcrypt.hash(user.password, 10);
+    createdUsers.push(
+      await prisma.user.upsert({ where: { email: user.email }, update: {}, create: { ...user, password } }),
+    );
+  }
 
   for (const vehicle of vehicles) {
     await prisma.vehicle.upsert({ where: { plate: vehicle.plate }, update: {}, create: vehicle });
+  }
+
+  const [maria] = createdUsers;
+  const hasHistory = await prisma.rental.count({ where: { userId: maria.id } });
+
+  if (!hasHistory) {
+    const corolla = await prisma.vehicle.findUniqueOrThrow({ where: { plate: "PBX3D45" } });
+    const startDate = new Date(Date.now() - 10 * DAY_IN_MS);
+    const expectedReturnDate = new Date(startDate.getTime() + 3 * DAY_IN_MS);
+
+    await prisma.rental.create({
+      data: {
+        userId: maria.id,
+        vehicleId: corolla.id,
+        startDate,
+        expectedReturnDate,
+        returnedAt: expectedReturnDate,
+        dailyRate: corolla.dailyRate,
+        totalAmount: corolla.dailyRate.mul(3),
+        status: RentalStatus.FINISHED,
+      },
+    });
   }
 
   console.log("Seed completed");

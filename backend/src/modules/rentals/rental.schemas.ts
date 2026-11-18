@@ -1,16 +1,18 @@
 import { RentalStatus } from "@prisma/client";
 import { z } from "zod";
 
-const isoDate = z.iso.date("Data inválida (use AAAA-MM-DD)").transform((value) => new Date(value));
+const dateTime = z.iso
+  .datetime({ offset: true, error: "Data inválida" })
+  .transform((value) => new Date(value));
 
 export const createRentalSchema = z
   .object({
-    vehicleId: z.coerce.number().int().positive(),
-    startDate: isoDate,
-    expectedReturnDate: isoDate,
+    vehicleId: z.coerce.number().int().positive("Veículo inválido"),
+    startDate: dateTime,
+    expectedReturnDate: dateTime,
   })
   .refine((data) => data.expectedReturnDate > data.startDate, {
-    message: "A devolução prevista deve ser posterior à retirada",
+    message: "A devolução prevista deve ser posterior ao início",
     path: ["expectedReturnDate"],
   });
 

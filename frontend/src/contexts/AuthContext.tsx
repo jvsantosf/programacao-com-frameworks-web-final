@@ -5,7 +5,6 @@ import type { AuthResponse, User } from "../types";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -52,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ user, loading, isAdmin: user?.role === "ADMIN", login, register, logout }),
+    () => ({ user, loading, login, register, logout }),
     [user, loading, login, register, logout],
   );
 

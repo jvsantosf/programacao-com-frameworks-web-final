@@ -8,7 +8,6 @@ const publicUserFields = {
   id: true,
   name: true,
   email: true,
-  role: true,
   createdAt: true,
 } as const;
 
@@ -24,7 +23,7 @@ export async function register(data: RegisterInput) {
     select: publicUserFields,
   });
 
-  return { user, token: signToken(user.id, user.role) };
+  return { user, token: signToken(user.id) };
 }
 
 export async function login(data: LoginInput) {
@@ -35,8 +34,8 @@ export async function login(data: LoginInput) {
     throw new AppError("E-mail ou senha incorretos", 401);
   }
 
-  const { password: _password, ...publicUser } = user;
-  return { user: publicUser, token: signToken(user.id, user.role) };
+  const { password: _password, updatedAt: _updatedAt, ...publicUser } = user;
+  return { user: publicUser, token: signToken(user.id) };
 }
 
 export async function getProfile(userId: number) {

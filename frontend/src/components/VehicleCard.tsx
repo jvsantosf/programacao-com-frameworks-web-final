@@ -1,29 +1,17 @@
 import type { ReactNode } from "react";
 import { categoryIllustrations } from "../lib/illustrations";
-import { categoryLabels, formatCurrency, vehicleStatusLabels } from "../lib/format";
+import { categoryLabels, formatCurrency } from "../lib/format";
 import { vehiclePhoto } from "../lib/vehiclePhotos";
-import type { Vehicle, VehicleStatus } from "../types";
+import type { Vehicle } from "../types";
 import { Badge, Card, Illustration } from "./ui";
 
-const statusTones: Record<VehicleStatus, "green" | "orange" | "slate"> = {
-  AVAILABLE: "green",
-  RENTED: "orange",
-  MAINTENANCE: "slate",
-};
-
-export function VehicleStatusBadge({ status }: { status: VehicleStatus }) {
-  return <Badge tone={statusTones[status]}>{vehicleStatusLabels[status]}</Badge>;
+export function AvailabilityBadge({ available }: { available: boolean }) {
+  return <Badge tone={available ? "green" : "orange"}>{available ? "Disponível" : "Locado"}</Badge>;
 }
 
-type VehicleIdentity = Pick<Vehicle, "brand" | "model" | "category" | "imageUrl">;
+type VehicleIdentity = Pick<Vehicle, "brand" | "model" | "category">;
 
 export function VehicleImage({ vehicle, className = "" }: { vehicle: VehicleIdentity; className?: string }) {
-  const name = `${vehicle.brand} ${vehicle.model}`;
-
-  if (vehicle.imageUrl) {
-    return <img src={vehicle.imageUrl} alt={name} className={`object-cover ${className}`} />;
-  }
-
   const photo = vehiclePhoto(vehicle);
 
   return (
@@ -31,7 +19,7 @@ export function VehicleImage({ vehicle, className = "" }: { vehicle: VehicleIden
       {photo ? (
         <img
           src={photo}
-          alt={name}
+          alt={`${vehicle.brand} ${vehicle.model}`}
           draggable={false}
           className="w-[84%] object-contain drop-shadow-[0_18px_18px_rgba(16,23,39,0.22)]"
         />
@@ -43,17 +31,12 @@ export function VehicleImage({ vehicle, className = "" }: { vehicle: VehicleIden
 }
 
 export function VehicleThumb({ vehicle, className = "h-12 w-16" }: { vehicle: VehicleIdentity; className?: string }) {
-  const photo = vehicle.imageUrl ?? vehiclePhoto(vehicle);
+  const photo = vehiclePhoto(vehicle);
 
   return (
     <span className={`flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-50 ${className}`}>
       {photo ? (
-        <img
-          src={photo}
-          alt=""
-          aria-hidden="true"
-          className={vehicle.imageUrl ? "size-full object-cover" : "w-[88%] object-contain drop-shadow-md"}
-        />
+        <img src={photo} alt="" aria-hidden="true" className="w-[88%] object-contain drop-shadow-md" />
       ) : (
         <Illustration src={categoryIllustrations[vehicle.category]} className="h-2/3 w-auto" />
       )}
@@ -67,7 +50,7 @@ export function VehicleCard({ vehicle, actions }: { vehicle: Vehicle; actions?: 
       <div className="relative p-2">
         <VehicleImage vehicle={vehicle} className="aspect-[16/10] w-full rounded-2xl" />
         <div className="absolute left-5 top-5">
-          <VehicleStatusBadge status={vehicle.status} />
+          <AvailabilityBadge available={vehicle.available} />
         </div>
       </div>
 

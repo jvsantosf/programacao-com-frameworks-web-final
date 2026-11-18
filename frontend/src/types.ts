@@ -1,13 +1,10 @@
-export type Role = "ADMIN" | "CUSTOMER";
 export type VehicleCategory = "ECONOMY" | "HATCH" | "SEDAN" | "SUV" | "PICKUP";
-export type VehicleStatus = "AVAILABLE" | "RENTED" | "MAINTENANCE";
-export type RentalStatus = "ACTIVE" | "RETURNED";
+export type RentalStatus = "ACTIVE" | "FINISHED";
 
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: Role;
   createdAt: string;
 }
 
@@ -20,8 +17,7 @@ export interface Vehicle {
   color: string;
   category: VehicleCategory;
   dailyRate: string;
-  status: VehicleStatus;
-  imageUrl: string | null;
+  available: boolean;
 }
 
 export interface Rental {
@@ -32,12 +28,10 @@ export interface Rental {
   expectedReturnDate: string;
   returnedAt: string | null;
   dailyRate: string;
-  estimatedAmount: string;
-  totalAmount: string | null;
+  totalAmount: string;
   status: RentalStatus;
   createdAt: string;
   vehicle: Vehicle;
-  user: Pick<User, "id" | "name" | "email">;
 }
 
 export interface AuthResponse {

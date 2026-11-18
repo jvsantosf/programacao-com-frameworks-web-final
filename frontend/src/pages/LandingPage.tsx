@@ -1,14 +1,13 @@
 import { ArrowRight, Check, ChevronDown } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-router";
 import cretaImage from "../assets/hyundai-creta.webp";
 import compassImage from "../assets/jeep-compass.webp";
 import { Logo } from "../components/Layout";
-import { VehicleCard, VehicleThumb } from "../components/VehicleCard";
+import { VehicleThumb } from "../components/VehicleCard";
 import { Badge, buttonClass, Card, CheckItem, Illustration } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
-import { api } from "../lib/api";
-import { categoryLabels, formatCurrency } from "../lib/format";
+import { categoryLabels } from "../lib/format";
 import { illustrations } from "../lib/illustrations";
 import { categoryPhotos } from "../lib/vehiclePhotos";
 import type { Vehicle, VehicleCategory } from "../types";
@@ -29,12 +28,12 @@ const steps = [
   {
     image: illustrations.calendar,
     title: "Defina as datas",
-    text: "Informe a retirada e a devolução prevista. O valor estimado aparece na hora.",
+    text: "Informe o início e a devolução prevista, com data e hora. O valor total aparece na hora.",
   },
   {
     image: illustrations.key,
     title: "Retire e devolva",
-    text: "Acompanhe a locação pelo painel. Na devolução, você paga só pelos dias usados.",
+    text: "Acompanhe a locação pelo painel e finalize quando devolver o carro.",
   },
 ];
 
@@ -54,11 +53,11 @@ const faqs = [
   {
     question: "Como o valor da locação é calculado?",
     answer:
-      "Ao reservar, mostramos o valor estimado: diária × número de dias. Na devolução, o valor final considera os dias efetivamente utilizados, com no mínimo uma diária.",
+      "O valor total é calculado pelo período contratado: diária × número de diárias. Qualquer fração de 24 horas conta como uma diária completa; por exemplo, 2 dias e 1 hora são cobrados como 3 diárias.",
   },
   {
-    question: "Posso devolver o carro antes da data prevista?",
-    answer: "Pode. Ao registrar a devolução antecipada, você paga apenas pelos dias em que ficou com o veículo.",
+    question: "Como finalizo uma locação?",
+    answer: "Em \"Minhas locações\", clique em \"Finalizar locação\". A data de devolução é registrada e o veículo volta a ficar disponível.",
   },
   {
     question: "E se o preço da diária mudar depois da minha reserva?",
@@ -67,7 +66,7 @@ const faqs = [
   {
     question: "Por que alguns veículos não podem ser alugados?",
     answer:
-      "Veículos já locados ou em manutenção ficam indisponíveis até voltarem para a frota. Você pode acompanhar o status de cada um no catálogo.",
+      "Um veículo com locação em andamento fica indisponível até que ela seja finalizada. Assim, o mesmo carro nunca tem duas locações ativas ao mesmo tempo.",
   },
 ];
 
@@ -116,10 +115,7 @@ function Header() {
   );
 }
 
-function Hero({ fleet }: { fleet: Vehicle[] }) {
-  const available = fleet.filter((vehicle) => vehicle.status === "AVAILABLE");
-  const lowestRate = available.length > 0 ? Math.min(...available.map((vehicle) => Number(vehicle.dailyRate))) : null;
-
+function Hero() {
   return (
     <section className="relative overflow-hidden">
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl" />
@@ -153,14 +149,12 @@ function Hero({ fleet }: { fleet: Vehicle[] }) {
 
           <dl className="mt-10 flex gap-10">
             <div>
-              <dt className="text-sm text-slate-500">Veículos na frota</dt>
-              <dd className="mt-1 text-2xl font-bold tracking-tight text-ink">{fleet.length || "—"}</dd>
+              <dt className="text-sm text-slate-500">Cobrança</dt>
+              <dd className="mt-1 text-2xl font-bold tracking-tight text-ink">Por diária</dd>
             </div>
             <div>
-              <dt className="text-sm text-slate-500">Diárias a partir de</dt>
-              <dd className="mt-1 text-2xl font-bold tracking-tight text-ink">
-                {lowestRate !== null ? formatCurrency(lowestRate) : "—"}
-              </dd>
+              <dt className="text-sm text-slate-500">Disponibilidade</dt>
+              <dd className="mt-1 text-2xl font-bold tracking-tight text-ink">Em tempo real</dd>
             </div>
           </dl>
         </div>
@@ -254,18 +248,15 @@ function HowItWorks() {
   );
 }
 
-function Fleet({ fleet }: { fleet: Vehicle[] }) {
-  const { user } = useAuth();
-  const featured = fleet.filter((vehicle) => vehicle.status === "AVAILABLE").slice(0, 3);
-  const categories = useMemo(
-    () =>
-      (Object.keys(categoryLabels) as VehicleCategory[]).map((category) => ({
-        category,
-        count: fleet.filter((vehicle) => vehicle.category === category).length,
-      })),
-    [fleet],
-  );
+const categoryDescriptions: Record<VehicleCategory, string> = {
+  ECONOMY: "Baixo consumo para o dia a dia na cidade.",
+  HATCH: "Compacto, ágil e fácil de estacionar.",
+  SEDAN: "Conforto e porta-malas para a família.",
+  SUV: "Espaço e altura para qualquer estrada.",
+  PICKUP: "Caçamba e força para o trabalho pesado.",
+};
 
+function Fleet() {
   return (
     <section id="frota" className="scroll-mt-20 bg-white py-24">
       <div className="mx-auto max-w-6xl px-4">
@@ -275,39 +266,21 @@ function Fleet({ fleet }: { fleet: Vehicle[] }) {
           description="Do econômico para o dia a dia à picape para o trabalho pesado."
         />
 
-        <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {categories.map(({ category, count }) => (
-            <div key={category} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-canvas p-4">
-              <img src={categoryPhotos[category]} alt="" aria-hidden="true" className="h-10 w-16 shrink-0 object-contain drop-shadow-md" />
-              <div>
-                <p className="font-semibold text-ink">{categoryLabels[category]}</p>
-                <p className="text-xs text-slate-500">
-                  {count} {count === 1 ? "veículo" : "veículos"}
-                </p>
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {(Object.keys(categoryLabels) as VehicleCategory[]).map((category) => (
+            <div key={category} className="rounded-3xl border border-slate-100 bg-canvas p-5 text-center">
+              <div className="flex h-24 items-center justify-center">
+                <img src={categoryPhotos[category]} alt="" aria-hidden="true" className="max-h-full w-full object-contain drop-shadow-lg" />
               </div>
+              <p className="mt-4 font-bold text-ink">{categoryLabels[category]}</p>
+              <p className="mt-1 text-sm leading-snug text-slate-500">{categoryDescriptions[category]}</p>
             </div>
           ))}
         </div>
 
-        {featured.length > 0 && (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((vehicle) => (
-              <VehicleCard
-                key={vehicle.id}
-                vehicle={vehicle}
-                actions={
-                  <Link to={user ? `/vehicles/${vehicle.id}/rent` : "/login"} className={`${buttonClass("primary")} h-10 px-5`}>
-                    Alugar
-                  </Link>
-                }
-              />
-            ))}
-          </div>
-        )}
-
         <div className="mt-10 text-center">
-          <Link to="/vehicles" className={buttonClass("secondary")}>
-            Ver frota completa
+          <Link to="/vehicles" className={buttonClass("primary")}>
+            Ver veículos disponíveis
             <ArrowRight className="size-4" />
           </Link>
         </div>
@@ -361,7 +334,7 @@ function PricingVisual() {
             <span className="font-medium text-ink">R$ 249,90</span>
           </div>
           <div className="flex justify-between text-slate-500">
-            <span>Dias utilizados</span>
+            <span>Diárias cobradas</span>
             <span className="font-medium text-ink">3</span>
           </div>
         </div>
@@ -375,10 +348,10 @@ function PricingVisual() {
 }
 
 function DashboardVisual() {
-  const rows: (Pick<Vehicle, "brand" | "model" | "plate" | "category" | "imageUrl"> & { active: boolean })[] = [
-    { brand: "Jeep", model: "Compass", plate: "OJK4E56", category: "SUV", imageUrl: null, active: true },
-    { brand: "Hyundai", model: "Creta", plate: "SLM5F67", category: "SUV", imageUrl: null, active: true },
-    { brand: "Fiat", model: "Toro", plate: "QWE6G78", category: "PICKUP", imageUrl: null, active: false },
+  const rows: (Pick<Vehicle, "brand" | "model" | "plate" | "category"> & { active: boolean })[] = [
+    { brand: "Jeep", model: "Compass", plate: "OJK4E56", category: "SUV", active: true },
+    { brand: "Hyundai", model: "Creta", plate: "SLM5F67", category: "SUV", active: true },
+    { brand: "Fiat", model: "Toro", plate: "QWE6G78", category: "PICKUP", active: false },
   ];
 
   return (
@@ -387,9 +360,9 @@ function DashboardVisual() {
       <div className="rounded-3xl border border-slate-100 bg-canvas p-4 sm:p-5">
         <div className="grid grid-cols-3 gap-3">
           {[
-            ["Frota", "12"],
-            ["Locados", "5"],
-            ["Disponíveis", "7"],
+            ["Locações", "12"],
+            ["Em andamento", "2"],
+            ["Finalizadas", "10"],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-white p-3 shadow-sm">
               <p className="text-xs text-slate-500">{label}</p>
@@ -405,7 +378,7 @@ function DashboardVisual() {
                 <p className="truncate text-sm font-semibold text-ink">{`${row.brand} ${row.model}`}</p>
                 <p className="font-mono text-xs text-slate-500">{row.plate}</p>
               </div>
-              <Badge tone={row.active ? "blue" : "green"}>{row.active ? "Em andamento" : "Devolvido"}</Badge>
+              <Badge tone={row.active ? "blue" : "green"}>{row.active ? "Em andamento" : "Finalizada"}</Badge>
             </div>
           ))}
         </div>
@@ -423,23 +396,23 @@ function Advantages() {
           <Feature
             eyebrow="Valor transparente"
             title="Você sabe quanto vai pagar antes de sair."
-            text="O valor estimado aparece enquanto você escolhe as datas, e a diária fica garantida no momento da reserva."
+            text="O valor total aparece enquanto você escolhe as datas, e a diária fica garantida no momento da reserva."
             items={[
-              "Total estimado calculado na hora",
+              "Valor total calculado na hora",
               "Diária fixada na reserva, sem reajuste surpresa",
-              "Devolveu antes? Paga só pelos dias usados",
+              "Fração de 24 horas conta como diária completa",
             ]}
             visual={<PricingVisual />}
           />
           <Feature
             reverse
-            eyebrow="Painel da locadora"
-            title="Frota, locações e devoluções no mesmo lugar."
-            text="O administrador cadastra veículos, acompanha cada locação em andamento e registra devoluções com poucos cliques."
+            eyebrow="Histórico de locações"
+            title="Suas locações e devoluções no mesmo lugar."
+            text="Acompanhe cada locação em andamento e consulte o histórico das finalizadas, com período, valor e data de devolução."
             items={[
-              "Status do veículo atualizado automaticamente",
-              "Histórico completo de locações por cliente",
-              "Alertas de locações em atraso",
+              "Disponibilidade do veículo atualizada automaticamente",
+              "Histórico completo das suas locações",
+              "Aviso de locações em atraso",
             ]}
             visual={<DashboardVisual />}
           />
@@ -556,22 +529,14 @@ function Footer() {
 }
 
 export function LandingPage() {
-  const [fleet, setFleet] = useState<Vehicle[]>([]);
-
-  useEffect(() => {
-    api<Vehicle[]>("/vehicles")
-      .then(setFleet)
-      .catch(() => setFleet([]));
-  }, []);
-
   return (
     <div className="min-h-screen bg-canvas">
       <Header />
       <main>
-        <Hero fleet={fleet} />
+        <Hero />
         <Highlights />
         <HowItWorks />
-        <Fleet fleet={fleet} />
+        <Fleet />
         <Advantages />
         <Faq />
         <CallToAction />

@@ -7,11 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  ADMIN
-  CUSTOMER
-}
-
 enum VehicleCategory {
   ECONOMY
   HATCH
@@ -20,15 +15,9 @@ enum VehicleCategory {
   PICKUP
 }
 
-enum VehicleStatus {
-  AVAILABLE
-  RENTED
-  MAINTENANCE
-}
-
 enum RentalStatus {
   ACTIVE
-  RETURNED
+  FINISHED
 }
 
 model User {
@@ -36,7 +25,6 @@ model User {
   name      String   @db.VarChar(120)
   email     String   @unique @db.VarChar(160)
   password  String   @db.VarChar(255)
-  role      Role     @default(CUSTOMER)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   rentals   Rental[]
@@ -53,8 +41,7 @@ model Vehicle {
   color     String          @db.VarChar(30)
   category  VehicleCategory
   dailyRate Decimal         @map("daily_rate") @db.Decimal(10, 2)
-  status    VehicleStatus   @default(AVAILABLE)
-  imageUrl  String?         @map("image_url") @db.VarChar(500)
+  available Boolean         @default(true)
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
   rentals   Rental[]
@@ -66,12 +53,11 @@ model Rental {
   id                 Int          @id @default(autoincrement())
   userId             Int          @map("user_id")
   vehicleId          Int          @map("vehicle_id")
-  startDate          DateTime     @map("start_date") @db.Date
-  expectedReturnDate DateTime     @map("expected_return_date") @db.Date
+  startDate          DateTime     @map("start_date")
+  expectedReturnDate DateTime     @map("expected_return_date")
   returnedAt         DateTime?    @map("returned_at")
   dailyRate          Decimal      @map("daily_rate") @db.Decimal(10, 2)
-  estimatedAmount    Decimal      @map("estimated_amount") @db.Decimal(10, 2)
-  totalAmount        Decimal?     @map("total_amount") @db.Decimal(10, 2)
+  totalAmount        Decimal      @map("total_amount") @db.Decimal(10, 2)
   status             RentalStatus @default(ACTIVE)
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")

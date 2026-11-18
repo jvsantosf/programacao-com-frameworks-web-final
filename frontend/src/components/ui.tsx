@@ -46,6 +46,22 @@ export function Alert({ children }: { children: ReactNode }) {
   return <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{children}</div>;
 }
 
+export function SuccessAlert({ children, onClose }: { children: ReactNode; onClose?: () => void }) {
+  return (
+    <div role="status" className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+        <Check className="size-3.5" strokeWidth={3} />
+      </span>
+      <span className="flex-1">{children}</span>
+      {onClose && (
+        <button type="button" onClick={onClose} aria-label="Fechar" className="rounded-full p-1 text-emerald-600 hover:bg-emerald-100">
+          <X className="size-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 const badgeTones = {
   green: "bg-emerald-50 text-emerald-600",
   orange: "bg-brand-50 text-brand-600",

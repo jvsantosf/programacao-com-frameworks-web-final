@@ -8,4 +8,4 @@ rentalRoutes.use(authenticate);
 rentalRoutes.get("/", rentalController.index);
 rentalRoutes.get("/:id", rentalController.show);
 rentalRoutes.post("/", rentalController.store);
-rentalRoutes.patch("/:id/return", rentalController.giveBack);
+rentalRoutes.patch("/:id/finish", rentalController.finish);

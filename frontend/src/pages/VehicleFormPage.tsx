@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router";
-import { Alert, Button, buttonClass, Card, Field, Illustration, Input, Select, Spinner } from "../components/ui";
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
+import { Alert, Button, buttonClass, Card, Field, Illustration, Input, Select } from "../components/ui";
 import { api, errorMessage } from "../lib/api";
 import { categoryLabels } from "../lib/format";
 import { illustrations } from "../lib/illustrations";
@@ -15,46 +15,15 @@ const emptyForm = {
   color: "",
   category: "ECONOMY",
   dailyRate: "",
-  status: "AVAILABLE",
-  imageUrl: "",
 };
 
 type FormState = typeof emptyForm;
 
 export function VehicleFormPage() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const isEditing = Boolean(id);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [isRented, setIsRented] = useState(false);
-  const [loading, setLoading] = useState(isEditing);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!id) {
-      setForm(emptyForm);
-      setIsRented(false);
-      return;
-    }
-    api<Vehicle>(`/vehicles/${id}`)
-      .then((vehicle) => {
-        setIsRented(vehicle.status === "RENTED");
-        setForm({
-          brand: vehicle.brand,
-          model: vehicle.model,
-          year: String(vehicle.year),
-          plate: vehicle.plate,
-          color: vehicle.color,
-          category: vehicle.category,
-          dailyRate: String(Number(vehicle.dailyRate)),
-          status: vehicle.status,
-          imageUrl: vehicle.imageUrl ?? "",
-        });
-      })
-      .catch((err) => setError(errorMessage(err)))
-      .finally(() => setLoading(false));
-  }, [id]);
 
   function update(field: keyof FormState) {
     return (event: { target: { value: string } }) => setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -65,41 +34,32 @@ export function VehicleFormPage() {
     setError("");
     setSubmitting(true);
 
-    const { status, ...rest } = form;
-    const body = {
-      ...rest,
-      year: Number(form.year),
-      dailyRate: Number(form.dailyRate),
-      ...(isRented ? {} : { status }),
-    };
-
     try {
-      await api(isEditing ? `/vehicles/${id}` : "/vehicles", { method: isEditing ? "PUT" : "POST", body });
-      navigate("/vehicles");
+      const vehicle = await api<Vehicle>("/vehicles", {
+        method: "POST",
+        body: { ...form, year: Number(form.year), dailyRate: Number(form.dailyRate) },
+      });
+      navigate("/vehicles", {
+        state: { success: `${vehicle.brand} ${vehicle.model} (${vehicle.plate}) cadastrado com sucesso.` },
+      });
     } catch (err) {
       setError(errorMessage(err));
       setSubmitting(false);
     }
   }
 
-  if (loading) return <Spinner />;
-
   return (
     <div className="mx-auto max-w-2xl">
       <Link to="/vehicles" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-ink">
         <ArrowLeft className="size-4" />
-        Voltar para a frota
+        Voltar para os veículos
       </Link>
 
       <Card className="p-8 sm:p-10">
         <div className="text-center">
-          <Illustration src={isEditing ? illustrations.wrench : illustrations.automobile} className="mx-auto size-24" />
-          <h1 className="mt-4 text-[28px] font-bold tracking-tight text-ink">
-            {isEditing ? "Editar veículo" : "Cadastrar veículo"}
-          </h1>
-          <p className="mt-2 text-slate-500">
-            {isEditing ? "Atualize as informações do veículo." : "Adicione um novo veículo à frota da locadora."}
-          </p>
+          <Illustration src={illustrations.automobile} className="mx-auto size-24" />
+          <h1 className="mt-4 text-[28px] font-bold tracking-tight text-ink">Cadastrar veículo</h1>
+          <p className="mt-2 text-slate-500">Adicione um novo veículo à frota da locadora.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -130,28 +90,18 @@ export function VehicleFormPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Valor da diária (R$)">
-              <Input
-                type="number"
-                required
-                min="0.01"
-                step="0.01"
-                value={form.dailyRate}
-                onChange={update("dailyRate")}
-                placeholder="0,00"
-              />
-            </Field>
-            <Field label="Status" hint={isRented ? "Libere o veículo registrando a devolução." : undefined}>
-              <Select value={form.status} onChange={update("status")} disabled={isRented}>
-                {isRented && <option value="RENTED">Locado</option>}
-                <option value="AVAILABLE">Disponível</option>
-                <option value="MAINTENANCE">Manutenção</option>
-              </Select>
-            </Field>
           </div>
 
-          <Field label="URL da imagem" hint="Opcional. Sem imagem, exibimos uma ilustração da categoria.">
-            <Input type="url" value={form.imageUrl} onChange={update("imageUrl")} placeholder="https://..." />
+          <Field label="Valor da diária (R$)">
+            <Input
+              type="number"
+              required
+              min="0.01"
+              step="0.01"
+              value={form.dailyRate}
+              onChange={update("dailyRate")}
+              placeholder="0,00"
+            />
           </Field>
 
           <div className="grid grid-cols-2 gap-3 pt-3">
@@ -159,7 +109,7 @@ export function VehicleFormPage() {
               Cancelar
             </Link>
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Salvando..." : isEditing ? "Salvar alterações" : "Cadastrar"}
+              {submitting ? "Salvando..." : "Cadastrar"}
             </Button>
           </div>
         </form>

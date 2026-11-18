@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { idParamSchema } from "../../lib/params";
-import { updateVehicleSchema, vehicleQuerySchema, vehicleSchema } from "./vehicle.schemas";
+import { vehicleQuerySchema, vehicleSchema } from "./vehicle.schemas";
 import * as vehicleService from "./vehicle.service";
 
 export async function index(req: Request, res: Response) {
@@ -16,16 +16,4 @@ export async function show(req: Request, res: Response) {
 export async function store(req: Request, res: Response) {
   const data = vehicleSchema.parse(req.body);
   res.status(201).json(await vehicleService.create(data));
-}
-
-export async function update(req: Request, res: Response) {
-  const { id } = idParamSchema.parse(req.params);
-  const data = updateVehicleSchema.parse(req.body);
-  res.json(await vehicleService.update(id, data));
-}
-
-export async function destroy(req: Request, res: Response) {
-  const { id } = idParamSchema.parse(req.params);
-  await vehicleService.remove(id);
-  res.status(204).send();
 }

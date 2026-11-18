@@ -17,14 +17,13 @@ export function App() {
           <Route index element={<LandingPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
-          <Route element={<Layout />}>
+          <Route element={<RequireAuth><Layout /></RequireAuth>}>
             <Route path="vehicles" element={<VehiclesPage />} />
-            <Route path="rentals" element={<RequireAuth><RentalsPage /></RequireAuth>} />
-            <Route path="vehicles/:id/rent" element={<RequireAuth><RentVehiclePage /></RequireAuth>} />
-            <Route path="vehicles/new" element={<RequireAuth adminOnly><VehicleFormPage /></RequireAuth>} />
-            <Route path="vehicles/:id/edit" element={<RequireAuth adminOnly><VehicleFormPage /></RequireAuth>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="vehicles/new" element={<VehicleFormPage />} />
+            <Route path="vehicles/:id/rent" element={<RentVehiclePage />} />
+            <Route path="rentals" element={<RentalsPage />} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
